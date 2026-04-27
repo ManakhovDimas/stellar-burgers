@@ -1,0 +1,54 @@
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { TConstructorIngredient } from '@utils-types';
+import { RootState } from '../store';
+
+interface ConstructorState {
+  bun: TConstructorIngredient | null;
+  ingredients: TConstructorIngredient[];
+}
+
+const initialState: ConstructorState = {
+  bun: null,
+  ingredients: []
+};
+
+const constructorSlice = createSlice({
+  name: 'constructor',
+  initialState,
+  reducers: {
+    setBun: (state, action: PayloadAction<TConstructorIngredient>) => {
+      state.bun = action.payload;
+    },
+    addIngredient: (state, action: PayloadAction<TConstructorIngredient>) => {
+      state.ingredients.push(action.payload);
+    },
+    removeIngredient: (state, action: PayloadAction<string>) => {
+      state.ingredients = state.ingredients.filter(
+        (item) => item._id !== action.payload
+      );
+    },
+    moveIngredient: (
+      state,
+      action: PayloadAction<{ fromIndex: number; toIndex: number }>
+    ) => {
+      const { fromIndex, toIndex } = action.payload;
+      const ingredients = [...state.ingredients];
+      ingredients.splice(toIndex, 0, ingredients.splice(fromIndex, 1)[0]);
+      state.ingredients = ingredients;
+    },
+    resetConstructor: () => initialState
+  }
+});
+
+export const {
+  setBun,
+  addIngredient,
+  removeIngredient,
+  moveIngredient,
+  resetConstructor
+} = constructorSlice.actions;
+
+export const constructorReducer = constructorSlice.reducer;
+
+export const selectConstructorItems = (state: RootState) =>
+  state.burgerConstructor;
