@@ -4,7 +4,6 @@ import { BurgerIngredientUI } from '@ui';
 import { TBurgerIngredientProps } from './type';
 import { useDispatch } from '../../services/store';
 import { addIngredient, setBun } from '../../services/slices/constructorSlice';
-import { TConstructorIngredient } from '@utils-types';
 
 export const BurgerIngredient: FC<TBurgerIngredientProps> = memo(
   ({ ingredient, count }) => {
@@ -12,14 +11,10 @@ export const BurgerIngredient: FC<TBurgerIngredientProps> = memo(
     const dispatch = useDispatch();
 
     const handleAdd = () => {
-      const constructorIngredient: TConstructorIngredient = {
-        ...ingredient,
-        id: ingredient._id // идентификатор экземпляра для конструктора
-      };
       if (ingredient.type === 'bun') {
-        dispatch(setBun(constructorIngredient));
+        dispatch(setBun(ingredient)); // prepare в слайсе добавит uuid
       } else {
-        dispatch(addIngredient(constructorIngredient));
+        dispatch(addIngredient(ingredient));
       }
     };
 

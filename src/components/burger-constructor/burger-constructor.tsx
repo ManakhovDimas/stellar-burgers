@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { TConstructorIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 import { useDispatch, useSelector } from '../../services/store';
@@ -12,6 +12,7 @@ import { createOrder, closeOrderModal } from '../../services/slices/orderSlice';
 export const BurgerConstructor: FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation(); // используем хук
 
   const constructorItems = useSelector(selectConstructorItems);
   const { orderRequest, orderModalData } = useSelector((state) => state.order);
@@ -27,15 +28,19 @@ export const BurgerConstructor: FC = () => {
 
     const ingredientIds = [
       constructorItems.bun._id,
-      ...constructorItems.ingredients.map((item: { _id: any }) => item._id),
+      ...constructorItems.ingredients.map((item) => item._id),
       constructorItems.bun._id
     ];
-    dispatch(createOrder(ingredientIds));
+
+    dispatch(createOrder(ingredientIds))
+      .unwrap()
+      .then(() => {
+        dispatch(resetConstructor());
+      });
   };
 
   const closeOrderModalLocal = () => {
     dispatch(closeOrderModal());
-    dispatch(resetConstructor());
   };
 
   const price = useMemo(

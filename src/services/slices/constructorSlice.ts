@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { TConstructorIngredient } from '@utils-types';
+import { v4 as uuid4 } from 'uuid';
+import { TIngredient, TConstructorIngredient } from '@utils-types';
 import { RootState } from '../store';
 
 interface ConstructorState {
@@ -16,15 +17,28 @@ const constructorSlice = createSlice({
   name: 'constructor',
   initialState,
   reducers: {
-    setBun: (state, action: PayloadAction<TConstructorIngredient>) => {
-      state.bun = action.payload;
+    // Булки – принимаем TIngredient, prepare добавляет уникальный id
+    setBun: {
+      reducer: (state, action: PayloadAction<TConstructorIngredient>) => {
+        state.bun = action.payload;
+      },
+      prepare: (ingredient: TIngredient) => ({
+        payload: { ...ingredient, id: uuid4() } as TConstructorIngredient
+      })
     },
-    addIngredient: (state, action: PayloadAction<TConstructorIngredient>) => {
-      state.ingredients.push(action.payload);
+    // Начинки/соусы – аналогично
+    addIngredient: {
+      reducer: (state, action: PayloadAction<TConstructorIngredient>) => {
+        state.ingredients.push(action.payload);
+      },
+      prepare: (ingredient: TIngredient) => ({
+        payload: { ...ingredient, id: uuid4() } as TConstructorIngredient
+      })
     },
+    // Удаление – теперь по уникальному id экземпляра, а не по _id продукта
     removeIngredient: (state, action: PayloadAction<string>) => {
       state.ingredients = state.ingredients.filter(
-        (item) => item._id !== action.payload
+        (item) => item.id !== action.payload // ← используем уникальный id
       );
     },
     moveIngredient: (
@@ -47,7 +61,6 @@ export const {
   moveIngredient,
   resetConstructor
 } = constructorSlice.actions;
-
 export const constructorReducer = constructorSlice.reducer;
 
 export const selectConstructorItems = (state: RootState) =>
