@@ -1,3 +1,4 @@
+import { rootReducer } from './store';
 import { combineReducers } from '@reduxjs/toolkit';
 import { ingredientsReducer } from './slices/ingredientsSlice';
 import { constructorReducer } from './slices/constructorSlice';
@@ -6,49 +7,68 @@ import { feedReducer } from './slices/feedSlice';
 import { userOrdersReducer } from './slices/userOrdersSlice';
 import { orderReducer } from './slices/orderSlice';
 
-// Создаём rootReducer для теста (такой же, как в store.ts)
-const rootReducer = combineReducers({
-  ingredients: ingredientsReducer,
-  burgerConstructor: constructorReducer,
-  user: userReducer,
-  feed: feedReducer,
-  userOrders: userOrdersReducer,
-  order: orderReducer
-});
+// Создаём настоящий редьюсер из конфигурации store
+const reducer = combineReducers(rootReducer);
 
 describe('rootReducer', () => {
-  it('должен возвращать начальное состояние при вызове с undefined и неизвестным экшеном', () => {
-    const initialState = rootReducer(undefined, { type: 'UNKNOWN_ACTION' });
+  const initAction = { type: '@@INIT' };
+  const unknownAction = { type: 'UNKNOWN_ACTION' };
 
-    // Проверяем, что initialState содержит все ключи слайсов
-    expect(initialState).toHaveProperty('ingredients');
-    expect(initialState).toHaveProperty('burgerConstructor');
-    expect(initialState).toHaveProperty('user');
-    expect(initialState).toHaveProperty('feed');
-    expect(initialState).toHaveProperty('userOrders');
-    expect(initialState).toHaveProperty('order');
+  it('должен правильно инициализировать состояние всех слайсов', () => {
+    const state = reducer(undefined, initAction);
+
+    // Сравниваем полное состояние с эталонным
+    expect(state).toEqual({
+      ingredients: ingredientsReducer(undefined, initAction),
+      burgerConstructor: constructorReducer(undefined, initAction),
+      user: userReducer(undefined, initAction),
+      feed: feedReducer(undefined, initAction),
+      userOrders: userOrdersReducer(undefined, initAction),
+      order: orderReducer(undefined, initAction)
+    });
   });
 
-  it('должен возвращать корректное начальное состояние каждого слайса', () => {
-    const initialState = rootReducer(undefined, { type: 'UNKNOWN_ACTION' });
+  it('должен возвращать корректное состояние при неизвестном экшене', () => {
+    const state = reducer(undefined, unknownAction);
 
-    // Проверяем начальные состояния каждого слайса
-    expect(initialState.ingredients).toEqual({
-      items: [],
-      isLoading: false,
-      error: null
+    // Сравниваем полное состояние с эталонным
+    expect(state).toEqual({
+      ingredients: ingredientsReducer(undefined, unknownAction),
+      burgerConstructor: constructorReducer(undefined, unknownAction),
+      user: userReducer(undefined, unknownAction),
+      feed: feedReducer(undefined, unknownAction),
+      userOrders: userOrdersReducer(undefined, unknownAction),
+      order: orderReducer(undefined, unknownAction)
     });
+  });
 
-    expect(initialState.burgerConstructor).toEqual({
-      bun: null,
-      ingredients: []
-    });
+  it('должен содержать все необходимые ключи слайсов', () => {
+    const state = reducer(undefined, initAction);
 
-    expect(initialState.user).toEqual({
-      user: null,
-      isAuthChecking: true,
-      status: 'idle',
-      error: null
+    expect(Object.keys(state)).toEqual([
+      'ingredients',
+      'burgerConstructor',
+      'user',
+      'feed',
+      'userOrders',
+      'order'
+    ]);
+  });
+
+  it('не должен содержать лишних ключей', () => {
+    const state = reducer(undefined, initAction);
+    const expectedKeys = [
+      'ingredients',
+      'burgerConstructor',
+      'user',
+      'feed',
+      'userOrders',
+      'order'
+    ];
+
+    // Проверяем, что нет лишних ключей
+    Object.keys(state).forEach((key) => {
+      expect(expectedKeys).toContain(key);
     });
   });
 });

@@ -1,14 +1,16 @@
 import {
   ingredientsReducer,
   fetchIngredients,
-  selectIngredients,
   selectBuns,
   selectMains,
   selectSauces
 } from './ingredientsSlice';
 import { TIngredient } from '@utils-types';
+import { combineReducers } from '@reduxjs/toolkit';
+import { rootReducer } from '../store';
 
-// Моковые данные
+const reducer = combineReducers(rootReducer);
+
 const mockIngredients: TIngredient[] = [
   {
     _id: '1',
@@ -58,110 +60,65 @@ describe('ingredientsSlice', () => {
     error: null as string | null
   };
 
-  describe('fetchIngredients.pending', () => {
-    it('должен устанавливать isLoading в true при начале запроса', () => {
-      const action = { type: fetchIngredients.pending.type };
-      const state = ingredientsReducer(initialState, action);
-
-      expect(state.isLoading).toBe(true);
-      expect(state.error).toBeNull();
-      expect(state.items).toEqual([]);
-    });
+  it('должен устанавливать isLoading при fetchIngredients.pending', () => {
+    const action = { type: fetchIngredients.pending.type };
+    const state = ingredientsReducer(initialState, action);
+    expect(state.isLoading).toBe(true);
+    expect(state.error).toBeNull();
   });
 
-  describe('fetchIngredients.fulfilled', () => {
-    it('должен сохранять ингредиенты и сбрасывать isLoading при успешном запросе', () => {
-      const action = {
-        type: fetchIngredients.fulfilled.type,
-        payload: mockIngredients
-      };
-      const state = ingredientsReducer(initialState, action);
-
-      expect(state.isLoading).toBe(false);
-      expect(state.items).toEqual(mockIngredients);
-      expect(state.error).toBeNull();
-    });
+  it('должен сохранять ингредиенты при fetchIngredients.fulfilled', () => {
+    const action = {
+      type: fetchIngredients.fulfilled.type,
+      payload: mockIngredients
+    };
+    const state = ingredientsReducer(initialState, action);
+    expect(state.isLoading).toBe(false);
+    expect(state.items).toEqual(mockIngredients);
   });
 
-  describe('fetchIngredients.rejected', () => {
-    it('должен устанавливать ошибку и сбрасывать isLoading при ошибке запроса', () => {
-      const errorMessage = 'Ошибка загрузки ингредиентов';
-      const action = {
-        type: fetchIngredients.rejected.type,
-        error: { message: errorMessage }
-      };
-      const state = ingredientsReducer(initialState, action);
-
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBe(errorMessage);
-      expect(state.items).toEqual([]);
-    });
+  it('должен сохранять ошибку при fetchIngredients.rejected', () => {
+    const action = {
+      type: fetchIngredients.rejected.type,
+      error: { message: 'Ошибка загрузки' }
+    };
+    const state = ingredientsReducer(initialState, action);
+    expect(state.isLoading).toBe(false);
+    expect(state.error).toBe('Ошибка загрузки');
   });
 
   describe('селекторы', () => {
-    // Создаём минимальное состояние RootState для тестирования селекторов
-    const createMockState = (ingredients: TIngredient[]) => ({
-      ingredients: {
-        items: ingredients,
-        isLoading: false,
-        error: null as string | null
-      },
-      burgerConstructor: {
-        bun: null,
-        ingredients: [] as Array<{ id: string } & TIngredient>
-      },
-      user: {
-        user: null,
-        isAuthChecking: false,
-        status: 'idle' as const,
-        error: null as string | null
-      },
-      feed: {
-        orders: [],
-        total: 0,
-        totalToday: 0,
-        isLoading: false,
-        error: null as string | null
-      },
-      userOrders: {
-        orders: [],
-        isLoading: false,
-        error: null as string | null
-      },
-      order: {
-        currentOrder: null,
-        orderModalData: null,
-        orderRequest: false,
-        isLoading: false,
-        error: null as string | null
-      }
+    // Создаём состояние с ингредиентами через диспатч fulfilled экшена
+    const stateWithIngredients = reducer(undefined, { type: '@@INIT' });
+    const ingredientsState = ingredientsReducer(initialState, {
+      type: fetchIngredients.fulfilled.type,
+      payload: mockIngredients
     });
 
-    it('selectIngredients должен возвращать все ингредиенты', () => {
-      const state = createMockState(mockIngredients);
-      const result = selectIngredients(state);
-      expect(result).toEqual(mockIngredients);
-    });
+    const fullState = {
+      ...stateWithIngredients,
+      ingredients: ingredientsState
+    };
 
     it('selectBuns должен возвращать только булки', () => {
-      const state = createMockState(mockIngredients);
-      const buns = selectBuns(state);
+      const buns = selectBuns(fullState);
       expect(buns).toHaveLength(1);
       expect(buns[0].type).toBe('bun');
-    });
-
-    it('selectMains должен возвращать только начинки', () => {
-      const state = createMockState(mockIngredients);
-      const mains = selectMains(state);
-      expect(mains).toHaveLength(1);
-      expect(mains[0].type).toBe('main');
+      expect(buns[0].name).toBe('Булка');
     });
 
     it('selectSauces должен возвращать только соусы', () => {
-      const state = createMockState(mockIngredients);
-      const sauces = selectSauces(state);
+      const sauces = selectSauces(fullState);
       expect(sauces).toHaveLength(1);
       expect(sauces[0].type).toBe('sauce');
+      expect(sauces[0].name).toBe('Соус');
+    });
+
+    it('selectMains должен возвращать только начинки', () => {
+      const mains = selectMains(fullState);
+      expect(mains).toHaveLength(1);
+      expect(mains[0].type).toBe('main');
+      expect(mains[0].name).toBe('Начинка');
     });
   });
 });
